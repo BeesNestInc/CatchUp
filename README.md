@@ -29,7 +29,9 @@ CatchUpは、ニュースを読む自由、知識を育てる自由を取り戻�
 
 CatchUpはまだパッケージ化はされていませんので、`git clone`にて取得して下さい。
 
---- git clone
+```shell
+$ git clone https://github.com/BeesNestInc/CatchUp.git
+```
 
 ### 動作環境
 
