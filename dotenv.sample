@@ -1,0 +1,12 @@
+GEMINI_API_KEY=
+OPENAI_API_KEY=
+LLM_PROVIDER='gemini:gemini-2.0-flash-lite'
+#LLM_PROVIDER=slm:tinyswallow
+#LLM_PROVIDER=llama:deepseek-r1-japanese
+LLAMA_SERVER_URL=http://localhost:8083
+EMBEDDING_PROVIDER='openai'
+
+# DOWNLOAD_FOLDER='./downloads'
+# PROCESSED_FOLDER='./processed'
+# KNOWLEDGE_FOLDER='./knowledge'
+CHAT_LOG_FOLDER='./chat-log'
