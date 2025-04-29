@@ -12,7 +12,7 @@ const WEAVIATE_HOST = process.env.WEAVIATE_HOST || "localhost:8080";
 const client = weaviate.client({ scheme: 'http', host: WEAVIATE_HOST });
 const chatSession = new ChatSession();
 const now = () => {
-  new Date().toISOString().split('T')[0]
+  return new Date().toISOString().split('T')[0]
 }
 
 export default {

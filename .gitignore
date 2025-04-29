@@ -1,4 +1,6 @@
-downloads
+downloads/
+processed/
+test
 # backup
 *~
 *.dump
@@ -7,8 +9,6 @@ package-lock.json
 
 # Logs
 chat-log
-processed
-downloads
 logs
 *.log
 npm-debug.log*
