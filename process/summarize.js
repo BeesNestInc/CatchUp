@@ -1,20 +1,25 @@
 import fs from 'fs';
 import path from 'path';
 import { load } from 'cheerio';
+import weaviate from 'weaviate-ts-client';
 import dotenv from 'dotenv';
 import { summarizeStructured } from './summarize-via.js';
-import { getEmbedding } from './vectorizer.js';
+import { getEmbedding } from '../libs/vectorizer.js';
 import { loadKnowledgeEntries, saveKnowledgeEntry } from '../libs/knowledge-file.js';
+import { findOrCreateKnowledgeEntry } from '../libs/find-or-create-knowledge.js';
 import {
   extractEntities,
-  findOrCreateKnowledgeEntry,
-  updateKnowledgeEntry,
 } from './knowledge.js';
 
 dotenv.config();
 
 const BASE_DIR = process.env.DOWNLOAD_FOLDER || './downloads';
 const OUT_DIR = process.env.PROCESSED_FOLDER || './processed';
+
+const client = weaviate.client({
+  scheme: 'http',
+  host: process.env.WEAVIATE_HOST || 'localhost:8080'
+});
 
 const processFile = async (filePath, relativePath, knowledgeEntries) => {
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
@@ -33,8 +38,10 @@ const processFile = async (filePath, relativePath, knowledgeEntries) => {
 
   const entities = extractEntities(body, tags);
   for (const entity of entities) {
-    const entry = await findOrCreateKnowledgeEntry(knowledgeEntries, entity);
-    await updateKnowledgeEntry(entry, id);
+    const entry = await findOrCreateKnowledgeEntry(client, entity, {
+      entries: knowledgeEntries,
+      articleId: id
+    });
     try {
       const provider = process.env.EMBEDDING_PROVIDER || 'openai';
       entry.embedding = {

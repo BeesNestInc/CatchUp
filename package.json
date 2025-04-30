@@ -10,6 +10,8 @@
     "kanpo": "node crawler/kanpo.js",
     "rss": "node crawler/fetch_rss.js",
     "bss": "node crawler/fetch_bss.js",
+    "forbes": "node crawler/fetch_forbes.js",
+    "crawler": "node crawler/fetch_bss.js;node crawler/fetch_rss.js",
     "summarize": "node process/summarize.js",
     "import": "node tools/import_to_weaviate.js; node tools/import_to_weaviate_knowledgeentry.js"
   },
@@ -34,6 +36,7 @@
     "express": "^4.21.2",
     "marked": "^15.0.7",
     "openai": "^4.95.1",
+    "playwright": "^1.52.0",
     "uuid": "^11.1.0",
     "weaviate-client": "^3.5.2",
     "weaviate-ts-client": "^2.2.0"
