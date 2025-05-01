@@ -28,6 +28,8 @@ export default {
         desiredResults: 5,
         summaryMode: "brief",
         longthink,
+        prevUser,
+        prevAssistant,
         maxLoop
       });
 

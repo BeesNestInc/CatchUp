@@ -92,11 +92,10 @@ const main = async () => {
 
     const vector = fileData.embedding?.openai?.vector;
 
-    if (!vector) {
-      console.warn(`⚠️ ベクトルなしスキップ: ${fileData.name}`);
+    if (!fileData.summary || !vector) {
+      console.warn(`⚠️ summaryまたはベクトルなしスキップ: ${fileData.name}`);
       continue;
     }
-
     await insertOrUpdateEntry(properties, vector);
     await new Promise(r => setTimeout(r, 500)); // ちょっと間隔開ける
   }

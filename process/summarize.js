@@ -42,16 +42,19 @@ const processFile = async (filePath, relativePath, knowledgeEntries) => {
       entries: knowledgeEntries,
       articleId: id
     });
-    try {
-      const provider = process.env.EMBEDDING_PROVIDER || 'openai';
-      entry.embedding = {
-        [provider]: await getEmbedding(entry.summary, provider)
-      };
-    } catch (err) {
-      console.warn(`⚠️ embedding更新失敗: ${err.message}`);
+    console.log('name', entry.name);
+    if (entry.summary) {
+      try {
+        const provider = process.env.EMBEDDING_PROVIDER || 'openai';
+        entry.embedding = {
+          [provider]: await getEmbedding(entry.summary, provider)
+        };
+      } catch (err) {
+        console.warn(`⚠️ embedding生成失敗: ${entry.name} → ${err.message}`);
+      }
     }
   }
-
+  
   const embedding = {};
   for (const provider of ['openai']) {
     try {
