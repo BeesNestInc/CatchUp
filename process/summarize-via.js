@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { requestLLM } from '../libs/request.js';
+import {parseLLMOutput} from '../libs/parse-output.js';
 
 dotenv.config();
 
@@ -55,24 +56,25 @@ console.log({intermediateText});
   // 🔥 Step2: 要約・分類
   const system = `
 あなたはプロのニュース要約者かつ分類者です。
-以下の記事本文を読み、指定されたフォーマットに正確に従って、JSON形式で出力してください。
+以下の記事本文を読み、指定されたフォーマットに正確に従って、YAML形式で出力してください。
 
 ---
 【出力フォーマット】
-{
-  "summary": "ニュース全体を200文字以内で要約したもの（日本語）",
-  "body": "ニュース本文の要点を整理し、簡潔な形で再構成したもの（日本語）",
-  "tags": ["記事内容に関連するキーワードや重要語句（日本語）"],
-  "classifiedTags": {
-    "eventType": ["事件・事故・災害など、記事に関連する分類（日本語）"],
-    "location": ["地名、国名、都市名など（日本語）"],
-    "other": ["その他の重要なキーワード（日本語）"]
-  }
-}
+summary: string # ニュース全体を200文字以内で要約したもの（日本語）
+body: string    # ニュース本文の要点を整理し、簡潔な形で再構成したもの（日本語）
+tags:           # 記事内容に関連するキーワードや重要語句（日本語）
+  - string
+classifiedTags:
+  eventType:    # 事件・事故・災害など、記事に関連する分類（日本語）
+    - string
+  location:     # 地名、国名、都市名など（日本語）
+    - string
+  other:        # その他の重要なキーワード（日本語）
+    - string
 ---
 
 【制約事項】
-- JSON形式を厳格に守ってください（余計な文章や注釈を付けないこと）
+- YAML形式を厳格に守ってください（余計な文章や注釈を付けないこと）
 - summaryはニュース全体の概要を簡潔にまとめてください
 - bodyは本文の重要な内容を整理し、自然な日本語で記述してください
 - tagsとclassifiedTagsは、本文の内容に即して適切に選んでください
@@ -82,15 +84,10 @@ console.log({intermediateText});
 `;
 
   try {
-    raw = await requestLLM(system, '', intermediateText, provider);
-    cleaned = raw.trim()
-      .replaceAll(/.*?<\/think>/sgi, '')
-      .replaceAll(/```json/gi, '')
-      .replaceAll(/```/g, '');
-console.log('cleaned', cleaned);
-      return JSON.parse(cleaned);
+    const raw = await requestLLM(system, '', intermediateText, provider);
+    return parseLLMOutput(raw);
   } catch (err) {
-    console.error(`[${provider}] JSON parse error:`, err.message);
+    console.error(`[${provider}] parse error:`, err.message);
     console.error('Response:', raw);
     return null;
   }

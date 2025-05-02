@@ -9,7 +9,7 @@ import { loadKnowledgeEntries } from "../libs/knowledge-file.js";
 
 const now = () => new Date().toISOString().split("T")[0];
 
-const searchKnowledgeAndArticles = async (client, knowledgeSpec, articleSpec, summaryMode = "brief") => {
+const searchKnowledgeAndArticles = async (client, knowledgeSpec, articleSpec, descriptionMode = "brief") => {
   const results = [];
 
   if (knowledgeSpec?.query) {
@@ -52,11 +52,11 @@ const searchKnowledgeAndArticles = async (client, knowledgeSpec, articleSpec, su
     const avec = (await getEmbedding(articleSpec.query)).vector;
     const abuilder = client.graphql.get()
       .withClassName("Article")
-      .withFields(summaryMode === "digest" ? "title summary datetime url" : "title summary datetime url");
+      .withFields(descriptionMode === "digest" ? "title summary datetime url" : "title summary datetime url");
 
     const afilters = [];
     if (typeof articleSpec.dateAfter === "string" && articleSpec.dateAfter.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      if (summaryMode === "digest") {
+      if (descriptionMode === "digest") {
         const start = `${articleSpec.dateAfter}T00:00:00Z`;
         const endDate = new Date(new Date(articleSpec.dateAfter).getTime() + 86400000)
           .toISOString().split("T")[0] + "T00:00:00Z";
@@ -81,7 +81,7 @@ const searchKnowledgeAndArticles = async (client, knowledgeSpec, articleSpec, su
     if (afilters.length) abuilder.withWhere({ operator: "And", operands: afilters });
     abuilder.withNearVector({ vector: avec, certainty: 0.6 });
 
-    abuilder.withLimit(summaryMode === "digest" ? 100 : (articleSpec.desiredResults || 5));
+    abuilder.withLimit(descriptionMode === "digest" ? 100 : (articleSpec.desiredResults || 5));
 
     const aresult = await abuilder.do();
     const articleDocs = (aresult.data.Get.Article || []).map(a => `【${a.datetime}】${a.title}\n${a.summary}\n${a.url}`);
@@ -95,13 +95,13 @@ export const thinkLoop = async ({ userMessage, prevUser = "", prevAssistant = ""
   const today = now();
   const initialPlan = await buildSearchPlan({ userMessage, prevUser, prevAssistant, now: today });
 console.log({initialPlan});
-  const { summaryMode = "brief" } = initialPlan;
-  const skipFeedback = summaryMode === "digest";
+  const { descriptionMode = "brief" } = initialPlan;
+  const skipFeedback = descriptionMode === "digest";
 
   let knowledgeEntry = initialPlan.knowledgeEntry;
   let article = initialPlan.article;
 
-  if (summaryMode === "digest") {
+  if (descriptionMode === "digest") {
     article.desiredResults = 999;
     knowledgeEntry.desiredResults = Math.max(knowledgeEntry.desiredResults || 0, 10);
   }
@@ -112,10 +112,10 @@ console.log({initialPlan});
   const maxLoop = 3;
 
   while (loopCount < maxLoop) {
-    const docs = await searchKnowledgeAndArticles(client, knowledgeEntry, article, summaryMode);
+    const docs = await searchKnowledgeAndArticles(client, knowledgeEntry, article, descriptionMode);
     const combined = docs.join("\n\n");
 
-    const systemPrompt = buildAnswerPrompt({ userMessage, summaryMode });
+    const systemPrompt = buildAnswerPrompt({ userMessage, descriptionMode });
     finalAnswer = await requestLLM(systemPrompt, "ユーザー", `${combined}\n\n質問:\n${userMessage}`);
 console.log({finalAnswer});
     if (skipFeedback) break;
@@ -124,7 +124,7 @@ console.log({finalAnswer});
     const feedbackRaw = await requestLLM("自己評価", "ユーザー", critiquePrompt);
 console.log({feedbackRaw})
     try {
-      feedback = JSON.parse(feedbackRaw.replace(/^```json/, '').replace(/```$/, ''));
+      feedback = parseLLMOutput(feedbackRaw);
     } catch (e) {
       feedback = { status: "none", reasons: [], keywords: [], article: {}, knowledgeEntry: {} };
     }

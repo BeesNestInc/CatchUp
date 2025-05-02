@@ -21,8 +21,8 @@ export const buildCritiquePrompt = ({ userMessage, finalAnswer, now }) => {
 - 「最近」「今週」「先月」などの語がある場合は、適切な範囲の開始日を推測して設定してください。
 - useVector は Article では常に true、KnowledgeEntry は false にしても構いません（情報が埋まっていないことがあるため）。
 - desiredResults は、質問が広い場合は10、狭い場合は3〜5と調整してください。
-- summaryMode は、質問が曖昧・広範なら "brief"、具体的・深掘り系なら "detailed" とします。
-- 必ず空の項目も含めて、完全なJSON形式で出力してください。
+- descriptionMode は、質問が曖昧・広範なら "brief"、具体的・深掘り系なら "detailed" とします。
+- 必ず空の項目も含めて、完全なYAML形式で出力してください。
 
 【厳守事項】
 - このシステムでは、常に最新のニュースデータが保存されています。
@@ -38,31 +38,39 @@ ${userMessage}
 ${finalAnswer}
 
 【出力形式】
-以下のようなJSONを返してください。
-\u0060\u0060\u0060json
-{
-  "status": "none | knowledge | article | abort",
-  "reasons": ["〜が不足している", "〜が曖昧"],
-  "keywords": ["…"],
-  "article": {
-    "query": "…",
-    "tags": ["…"],
-    "useVector": true,
-    "desiredResults": 5,
-    "dateAfter": "YYYY-MM-DD"
-  },
-  "knowledgeEntry": {
-    "query": "…",
-    "tags": ["…"],
-    "useVector": false,
-    "desiredResults": 5
-  }
-}
+以下のようなYAMLを返してください。
+\u0060\u0060\u0060yaml
+status: string              # 回答の妥当性評価
+                            # - none: 十分である
+                            # - knowledge: 知識ベースの補足が必要
+                            # - article: 記事ベースの補足が必要
+                            # - abort: 回答不能（情報不足など）
+reasons:                    # 回答が不十分な理由（1つ以上の日本語文章）
+  - string
+keywords:                   # 追加の検索に使える語句（単語や短い語句）
+  - string
+descriptionMode: string     # 記述の方針
+                            # - brief: 概要
+                            # - detailed: 詳細解説
+                            # - digest: 要約
+article:                    # Articleクラス用の再検索条件
+  query: string             # 検索語句（原文の単語を使うこと）
+  tags:                     # 分類タグ（関連人物・ジャンルなど）
+    - string
+  useVector: boolean        # ベクトル検索を使うか（基本 true）
+  desiredResults: integer   # 取得件数（例: 5）
+  dateAfter: string         # 検索範囲の開始日（YYYY-MM-DD形式）
+knowledgeEntry:             # KnowledgeEntryクラス用の再検索条件
+  query: string
+  tags:
+    - string
+  useVector: boolean        # 通常は false だが、必要なら true でも可
+  desiredResults: integer
 \u0060\u0060\u0060
 
 - statusが"none"や"abort"のときは article / knowledgeEntry は空でも構いません
 - keywords は Article 用の補助的なタグとして使える語句を指定してください
 - 各フィールドは省略せず明示してください（空でもOK）
-- 余計な説明は不要です。必ず有効なJSONのみを返してください。
+- 余計な説明は不要です。必ず有効なYAMLのみを返してください。
 `;
 };

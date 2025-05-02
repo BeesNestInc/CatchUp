@@ -12,13 +12,18 @@ const client = weaviate.client({
 const schemaDefinition = {
   class: 'Article',
   vectorizer: 'none',
+  invertedIndexConfig: {
+    stopwords: {
+      preset: 'none'  // ← ここが重要
+    }
+  },
   properties: [
     { name: 'originalId', dataType: ['text'] },
     { name: 'title', dataType: ['text'] },
     { name: 'summary', dataType: ['text'] },
     { name: 'tags', dataType: ['text[]'] },
     { name: 'classifiedTags', dataType: ['text[]'] },
-    { name: 'searchTags', dataType: ['text[]'] },  // ⭐ ここを追加！
+    { name: 'searchTags', dataType: ['text[]'] },
     { name: 'datetime', dataType: ['date'] },
     { name: 'url', dataType: ['text'] },
     { name: 'source', dataType: ['text'] }
