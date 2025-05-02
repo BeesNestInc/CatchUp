@@ -30,7 +30,8 @@ export default {
         longthink,
         prevUser,
         prevAssistant,
-        maxLoop
+        maxLoop,
+        session: req.session
       });
 
       chatSession.save(userMessage, finalAnswer);

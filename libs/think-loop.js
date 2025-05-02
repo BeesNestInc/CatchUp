@@ -5,7 +5,9 @@ import { getEmbedding } from "./vectorizer.js";
 import { buildAnswerPrompt } from "../prompts/generate-answer.js";
 import { buildCritiquePrompt } from "../prompts/critique-feedback.js";
 import { buildSearchPlan } from "../prompts/generate-search-plan.js";
-import { loadKnowledgeEntries } from "../libs/knowledge-file.js";
+import { loadKnowledgeEntries } from "./knowledge-file.js";
+import { loadPersona, savePersona } from './persona-store.js';
+import { logResponse } from './catchup-memory.js';
 
 const now = () => new Date().toISOString().split("T")[0];
 
@@ -52,7 +54,7 @@ const searchKnowledgeAndArticles = async (client, knowledgeSpec, articleSpec, de
     const avec = (await getEmbedding(articleSpec.query)).vector;
     const abuilder = client.graphql.get()
       .withClassName("Article")
-      .withFields(descriptionMode === "digest" ? "title summary datetime url" : "title summary datetime url");
+      .withFields("title summary datetime url");
 
     const afilters = [];
     if (typeof articleSpec.dateAfter === "string" && articleSpec.dateAfter.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -91,12 +93,53 @@ const searchKnowledgeAndArticles = async (client, knowledgeSpec, articleSpec, de
   return results;
 };
 
-export const thinkLoop = async ({ userMessage, prevUser = "", prevAssistant = "", client }) => {
+export const thinkLoop = async ({ userMessage, prevUser = "", prevAssistant = "", session, client }) => {
   const today = now();
-  const initialPlan = await buildSearchPlan({ userMessage, prevUser, prevAssistant, now: today });
-console.log({initialPlan});
+  let nickname = session?.catchUp?.nickname || "匿名さん";
+  let persona = loadPersona(nickname);
+  
+  // 発言ログ追加・更新は初期状態で仮登録
+  persona.log.push({
+    date: today,
+    text: userMessage
+  });
+  
+  const prevDescriptionMode = session?.catchUp?.prevDescriptionMode || null;
+  
+  // 先に buildSearchPlan を呼び出す（nickname, persona を渡す）
+  const initialPlan = await buildSearchPlan({
+    userMessage,
+    prevUser,
+    prevAssistant,
+    now: today,
+    nickname,
+    persona,
+    prevDescriptionMode
+  });
+  
+  // 🔁 nickname 自動リセットロジック（初回登録または関係性切れ）
+  const lastSeen = new Date(persona.lastSeen);
+  const nowTime = new Date();
+  const diffMinutes = (nowTime - lastSeen) / 60000;
+  
+  if (diffMinutes > 30 || initialPlan.meta?.status === "new_session") {
+    nickname = "匿名さん";
+    session.catchUp = session.catchUp || {};           // ← これを追加
+    session.catchUp.nickname = nickname;
+    persona.nickname = nickname;
+  }
+    
+  // 最終的な lastSeen の更新
+  persona.lastSeen = new Date().toISOString();
+  savePersona(persona);
+  
   const { descriptionMode = "brief" } = initialPlan;
   const skipFeedback = descriptionMode === "digest";
+  // 👇 summaryMode を記憶しておく（smalltalkなどを除外したければ分岐してもOK）
+  if (initialPlan.descriptionMode) {
+    session.catchUp = session.catchUp || {};
+    session.catchUp.prevSummaryMode = initialPlan.descriptionMode;
+  }
 
   let knowledgeEntry = initialPlan.knowledgeEntry;
   let article = initialPlan.article;
@@ -115,16 +158,22 @@ console.log({initialPlan});
     const docs = await searchKnowledgeAndArticles(client, knowledgeEntry, article, descriptionMode);
     const combined = docs.join("\n\n");
 
-    const systemPrompt = buildAnswerPrompt({ userMessage, descriptionMode });
+    const systemPrompt = buildAnswerPrompt({
+      userMessage,
+      prevUser,
+      prevAssistant,
+      descriptionMode,
+      strategy: initialPlan.meta?.strategy || {}
+    });
     finalAnswer = await requestLLM(systemPrompt, "ユーザー", `${combined}\n\n質問:\n${userMessage}`);
-console.log({finalAnswer});
+    console.log({finalAnswer});
     if (skipFeedback) break;
 
-    const critiquePrompt = buildCritiquePrompt({ userMessage, finalAnswer });
+    const critiquePrompt = buildCritiquePrompt({ userMessage, finalAnswer, now: today });
     const feedbackRaw = await requestLLM("自己評価", "ユーザー", critiquePrompt);
-console.log({feedbackRaw})
+    console.log({feedbackRaw})
     try {
-      feedback = parseLLMOutput(feedbackRaw);
+      feedback = JSON.parse(feedbackRaw.replace(/^```yaml/, '').replace(/^```json/, '').replace(/```$/, ''));
     } catch (e) {
       feedback = { status: "none", reasons: [], keywords: [], article: {}, knowledgeEntry: {} };
     }
@@ -142,6 +191,10 @@ console.log({feedbackRaw})
 
     loopCount++;
   }
-
-  return { response: finalAnswer, feedback };
+  logResponse({
+    nickname,
+    mode: initialPlan.descriptionMode || "unknown",
+    response: finalAnswer
+  });
+  return { response: finalAnswer, feedback, descriptionMode };
 };

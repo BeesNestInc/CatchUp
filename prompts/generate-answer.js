@@ -1,6 +1,16 @@
 // prompts/generate-answer.js（ライター用プロンプト）
 
-export const buildAnswerPrompt = ({ userMessage, prevUser = "", prevAssistant = "", summaryMode = "brief" }) => {
+export const buildAnswerPrompt = ({
+  userMessage,
+  prevUser = "",
+  prevAssistant = "",
+  descriptionMode = "brief",
+  strategy = {}
+}) => {
+  const tone = strategy.tone || "neutral";
+  const formality = strategy.formality || "medium";
+  const replyStyle = strategy.replyStyle || "factual";
+
   return `
 あなたはプロのニュースアシスタントです。
 ユーザーからの質問に対して、提供された情報だけを根拠に、正確で明快な回答を作成してください。
@@ -12,13 +22,18 @@ export const buildAnswerPrompt = ({ userMessage, prevUser = "", prevAssistant = 
 - 資料に記載されていないことを想像・補完してはいけません。
 - ユーザーの質問が曖昧な場合は、それに合わせた曖昧な回答で構いません。
 - 質問に無関係な情報を述べてはいけません。
-- 質問の内容や文体、資料の種類に応じて、適切な語り口・構成・口調を選んでください。
-  - たとえば、資料がニュース記事なら事実ベースで報道調に
-  - 資料が辞書的・解説的なら説明調に
-  - 雑談調の質問や内容なら、親しみのある口調で応答してください。
 
-  ${summaryMode === "digest" ? `
-【特別ルール（summaryMode: digest の場合）】
+【文体の指示】
+- tone: ${tone}
+- formality: ${formality}
+- replyStyle: ${replyStyle}
+これらの指示に従って語尾・構文・テンションを調整してください。
+例：
+- replyStyle: "teasing" → ユーモアやツッコミを交える
+- replyStyle: "factual" → 丁寧な説明を中心に構成
+
+${descriptionMode === "digest" ? `
+【特別ルール（descriptionMode: digest の場合）】
 - あなたは、提供されたニュース資料を元に「日付順または話題別」で並べたダイジェストを作成してください。
 - 各ニュース資料（記事）について、必ず1件ずつ出力してください（※例外は下記のみ）。
 - 同じ事件に関する複数の記事がある場合は、**明確に内容が重複している場合のみ**1件にまとめても構いません。
@@ -43,7 +58,6 @@ export const buildAnswerPrompt = ({ userMessage, prevUser = "", prevAssistant = 
 
 - 【2025-05-01】新幹線 架線ショートで遅延
   架線ショートの影響で一部区間の新幹線が一時運休しました。
-
 ` : ""}
 
 【会話の文脈】

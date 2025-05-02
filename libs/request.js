@@ -67,6 +67,8 @@ const providers = {
 };
 
 export const requestLLM = async (system, user, text, _provider = 'openai:gpt-4o') => {
+  console.log({system});
+  console.log({user});
   try {
     let provider = _provider.split(':')
     return  (providers[provider[0]](provider[1], system, user, text));

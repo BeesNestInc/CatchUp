@@ -1,6 +1,11 @@
 // prompts/critique-feedback.js（デスク強化 + 検索条件を返せる形式に）
 
-export const buildCritiquePrompt = ({ userMessage, finalAnswer, now }) => {
+export const buildCritiquePrompt = ({
+  userMessage,
+  finalAnswer,
+  now,
+  prevDescriptionMode
+}) => {
   return `あなたは回答の評価者（デスク）です。
 以下の質問と回答を読み、次の判断を行ってください：
 
@@ -22,6 +27,7 @@ export const buildCritiquePrompt = ({ userMessage, finalAnswer, now }) => {
 - useVector は Article では常に true、KnowledgeEntry は false にしても構いません（情報が埋まっていないことがあるため）。
 - desiredResults は、質問が広い場合は10、狭い場合は3〜5と調整してください。
 - descriptionMode は、質問が曖昧・広範なら "brief"、具体的・深掘り系なら "detailed" とします。
+- 雑談調の質問（例：「最近どう？」「面白い話ある？」）であれば、descriptionMode を "chatty" にしてください。
 - 必ず空の項目も含めて、完全なYAML形式で出力してください。
 
 【厳守事項】
@@ -37,8 +43,10 @@ ${userMessage}
 【回答】
 ${finalAnswer}
 
+【前回のスタイル】
+${prevDescriptionMode || "不明（初回）"}
+
 【出力形式】
-以下のようなYAMLを返してください。
 \u0060\u0060\u0060yaml
 status: string              # 回答の妥当性評価
                             # - none: 十分である
@@ -53,6 +61,7 @@ descriptionMode: string     # 記述の方針
                             # - brief: 概要
                             # - detailed: 詳細解説
                             # - digest: 要約
+                            # - chatty: 雑談
 article:                    # Articleクラス用の再検索条件
   query: string             # 検索語句（原文の単語を使うこと）
   tags:                     # 分類タグ（関連人物・ジャンルなど）
