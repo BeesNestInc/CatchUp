@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>LLM Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #chat-box { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll; }
+    .message { margin: 5px 0; }
+    .user { color: blue; }
+    .assistant { color: green; }
+    .external { color: red; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>LLM Chat</h1>
+  <div id="chat-box">
+    <% conversation.forEach(function(entry) { %>
+      <div class="message <%= entry.role %>">
+        <strong><%= entry.role %>:</strong> <%= entry.message %>
+      </div>
+    <% }); %>
+  </div>
+  <form method="post" action="/chat">
+    <textarea name="message" rows="4" cols="50" placeholder="メッセージを入力してください..."></textarea><br>
+    <button type="submit">送信</button>
+  </form>
+</body>
+</html>
