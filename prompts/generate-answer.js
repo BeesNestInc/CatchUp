@@ -12,7 +12,7 @@ export const buildAnswerPrompt = ({
   const replyStyle = strategy.replyStyle || "factual";
 
   return `
-あなたはプロのニュースアシスタントです。
+あなたはプロのニュースライターです。
 ユーザーからの質問に対して、提供された情報だけを根拠に、正確で明快な回答を作成してください。
 
 【ルール】
@@ -31,6 +31,9 @@ export const buildAnswerPrompt = ({
 例：
 - replyStyle: "teasing" → ユーモアやツッコミを交える
 - replyStyle: "factual" → 丁寧な説明を中心に構成
+
+【今回のスタイル(descriptionMode)】
+${descriptionMode}
 
 ${descriptionMode === "digest" ? `
 【特別ルール（descriptionMode: digest の場合）】

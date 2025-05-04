@@ -22,6 +22,7 @@ const client = weaviate.client({
 });
 
 const processFile = async (filePath, relativePath, knowledgeEntries) => {
+  console.log({filePath});
   const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   const { id, title, source, datetime, url, summary: rssSummary, rawHtml } = data;
 
@@ -33,7 +34,7 @@ const processFile = async (filePath, relativePath, knowledgeEntries) => {
     console.log(`⚠️ 要約失敗: ${id}`);
     return;
   }
-
+console.log(JSON.stringify(result, ' ', 2));
   const { summary, body, tags, classifiedTags } = result;
 
   const entities = extractEntities(body, tags);
@@ -97,7 +98,7 @@ const main = async () => {
         const relativePath = path.join(date, source, file);
         const outPath = path.join(OUT_DIR, relativePath);
         if (fs.existsSync(outPath)) {
-          console.log(`⏭ スキップ（既に要約あり）: ${relativePath}`);
+          //console.log(`⏭ スキップ（既に要約あり）: ${relativePath}`);
           continue;
         }
         await processFile(path.join(sourceDir, file), relativePath, knowledgeEntries);

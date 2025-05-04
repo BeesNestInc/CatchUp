@@ -11,6 +11,7 @@ export const extractEntities = (text, tags = []) => {
 export const extractFromTags = (tags = []) => {
   const result = new Set();
   for (const tag of tags) {
+    //console.log({tag})
     if (tag.trim()) result.add(tag.trim());
   }
   return result;

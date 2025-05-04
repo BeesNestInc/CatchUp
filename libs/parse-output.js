@@ -3,8 +3,8 @@ import yaml from 'js-yaml';
 export const parseLLMOutput = (raw, format = 'yaml') => {
   const cleaned = raw
     .replace(/^.*?```[a-z]*\n?/i, '')   // 最初のコードブロックまで全部消す
-    .replace(/```$/, '')                // 終端 ```
-    .replace(/<\/think>/gi, '')         // 思考タグも除去（任意）
+    .replace(/```/, '')                 // 終端 ```
+    .replace(/.*<\/think>/gi, '')       // 思考タグも除去
     .trim();
 
   try {

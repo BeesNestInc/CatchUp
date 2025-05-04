@@ -57,7 +57,6 @@ console.log({intermediateText});
   const system = `
 あなたはプロのニュース要約者かつ分類者です。
 以下の記事本文を読み、指定されたフォーマットに正確に従って、YAML形式で出力してください。
-
 ---
 【出力フォーマット】
 summary: string # ニュース全体を200文字以内で要約したもの（日本語）
@@ -75,9 +74,12 @@ classifiedTags:
 
 【制約事項】
 - YAML形式を厳格に守ってください（余計な文章や注釈を付けないこと）
+- "-"が先頭に指示されているものは配列です。1行1項目づつ記述してください
+- stringに":"が含まれる場合は、"\:"としてください
 - summaryはニュース全体の概要を簡潔にまとめてください
 - bodyは本文の重要な内容を整理し、自然な日本語で記述してください
 - tagsとclassifiedTagsは、本文の内容に即して適切に選んでください
+- 固有名詞は必ずtagに出力してください
 - 出力は必ず日本語で行ってください
 
 【記事本文】
@@ -85,6 +87,7 @@ classifiedTags:
 
   try {
     const raw = await requestLLM(system, '', intermediateText, provider);
+    console.log({raw});
     return parseLLMOutput(raw);
   } catch (err) {
     console.error(`[${provider}] parse error:`, err.message);

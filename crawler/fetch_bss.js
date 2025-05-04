@@ -16,7 +16,7 @@ async function fetchAndSaveNews() {
 
   for (let page = 1; page <= MAX_PAGES; page++) {
     const url = `${baseURL}/list/bss/latest?page=${page}`;
-    console.log(`📄 ページ ${page} を取得中...`);
+    //console.log(`📄 ページ ${page} を取得中...`);
     try {
       const { data } = await axios.get(url);
       const $ = load(data);
@@ -41,7 +41,7 @@ async function fetchAndSaveNews() {
 
     const filePath = path.join(folderPath, `${id}.json`);
     if (fs.existsSync(filePath)) {
-      console.log(`⏭ スキップ: ${id}（既に存在）`);
+      //console.log(`⏭ スキップ: ${id}（既に存在）`);
       continue;
     }
 

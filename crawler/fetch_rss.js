@@ -11,8 +11,6 @@ import {ensureDirectory} from '../libs/utils.js';
 
 dotenv.config();
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
-
 const saveFolder = process.env.DOWNLOAD_FOLDER || './downloads';
 
 const makeEntryId = ($el, date, feedId) => {
@@ -48,30 +46,31 @@ async function fetchAndSaveRSS() {
         const fileName = `${id}.json`;
         const filePath = path.join(folderPath, fileName);
         if (fs.existsSync(filePath)) {
-          console.log(`⏭ スキップ: ${fileName}（既に存在）`);
+          //console.log(`⏭ スキップ: ${fileName}（既に存在）`);
           return;
         }
 
-        let rawHtml = '';
+        let rawHtml;
         try {
           rawHtml = await axios.get(link).then(res => res.data);
         } catch (err) {
           console.warn(`⚠️ rawHtml取得失敗 (${link}): ${err.message}`);
-          rawHtml = '(取得失敗)';
         }
 
-        const json = {
-          id,
-          title,
-          source: feedId,
-          datetime,
-          url: link,
-          summary: description,
-          rawHtml
-        };
+        if  ( rawHtml ) {
+          const json = {
+            id,
+            title,
+            source: feedId,
+            datetime,
+            url: link,
+            summary: description,
+            rawHtml
+          };
 
-        fs.writeFileSync(filePath, JSON.stringify(json, null, 2), 'utf-8');
-        console.log(`✅ 保存: ${filePath}`);
+          fs.writeFileSync(filePath, JSON.stringify(json, null, 2), 'utf-8');
+          console.log(`✅ 保存: ${filePath}`);
+        }
       });
     } catch (err) {
       console.error(`⚠️ ${feedId} 取得失敗: ${err.message}`);
